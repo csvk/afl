@@ -1,0 +1,4 @@
+_SECTION_BEGIN("N50");
+Acolor = IIf(Foreign( Name() + ".N50", "I") == 1 ,colorDarkGreen,colorBlack );
+Plot(5, "ribbon", Acolor, styleOwnScale|styleArea|styleNoLabel|styleNoTitle,-0.5,100);
+_SECTION_END();
