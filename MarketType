@@ -5,13 +5,10 @@ WH = H;
 WL = L;
 WC = C;
 WV = ( WH - WL ) / WC * 100;
-//WVMean = MA(WV, 5);
 TimeFrameRestore();
 
 WVDaily = TimeFrameExpand(WV, inWeekly);
-//WVMeanDaily = TimeFrameExpand(WVMean, inWeekly);
 WeeklyVolatility = Ref(WVDaily, -1);
-//WeeklyVolatilityMean = Ref(WVMeanDaily, -1);
 
 //Based on all data till Aug 2018
 //WV Mean	4.407698276
@@ -22,33 +19,17 @@ WeeklyVolatility = Ref(WVDaily, -1);
 //-0.5SD	3.003455785
 //+3SD	12.83315322
 
-
 //MarketType = 1 "Quite", 2 "Normal", 3 "Volatile", 4 "Highly Volatile"
-//MarketType = IIf(WeeklyVolatilityMean < 3, 1, IIf(WeeklyVolatilityMean < 6, 2, 3));
+
 MarketType = IIf(WeeklyVolatility < 3, 1, IIf(WeeklyVolatility < 6, 2, IIf(WeeklyVolatility < 13, 3, 4)));
+MQ = ParamColor( "Quite", colorCycle );
+MN = ParamColor( "Normal", colorCycle );
+MV = ParamColor( "Volatile", colorCycle );
+MHV = ParamColor( "Highly Volatile", colorCycle );
 
-//MarketTypeColor = IIf(WeeklyVolatilityMean < 3, colorGreen, IIf(WeeklyVolatilityMean < 6, colorYellow, colorRed));
-MarketTypeColor = IIf(WeeklyVolatility < 3, colorDarkGreen, IIf(WeeklyVolatility < 6, colorGreen, IIf(WeeklyVolatility < 13, colorYellow, colorRed)));
-Plot(WeeklyVolatility, "WeeklyVolatility", MarketTypeColor, styleThick|styleLine|styleNoLabel|styleNoTitle,0,10);
+MarketTypeColor = IIf(WeeklyVolatility < 3, MQ, IIf(WeeklyVolatility < 6, MN, IIf(WeeklyVolatility < 13, MV, MHV)));
+Plot(WeeklyVolatility, "WeeklyVolatility", MarketTypeColor, ParamStyle("Volatility Style"),0,10);
 
-_SECTION_END();
-
-_SECTION_BEGIN("Market Direction");
-
-C_200 = Ref(C, -200); RangeChange_200 = (C - C_200) / C_200 * 100;
-C_100 = Ref(C, -100); RangeChange_100 = (C - C_100) / C_100 * 100;
-C_60 = Ref(C, -60);   RangeChange_60 = (C - C_60) / C_60 * 100;
-C_20 = Ref(C, -20);   RangeChange_20 = (C - C_20) / C_20 * 100;
-
-MarketDirectionColor = IIf(RangeChange_20 > 0 AND RangeChange_20 <=4 , colorWhite, 
-                           IIf(RangeChange_20 > 4 AND RangeChange_20 < 15, colorDarkGreen, 
-                               IIf(RangeChange_20 > 15, colorGreen, 
-                                   IIf(RangeChange_20 <= 0 AND RangeChange_20 > -13, colorDarkRed, colorRed))));
-Plot(RangeChange_20, "MarketDirection", MarketDirectionColor, styleThick|styleLine|styleNoLabel|styleNoTitle,0,10);
-
-_SECTION_END();
-
-_SECTION_BEGIN("Market Direction");
 
 Price = ParamField("Price field", 3);
 Periods = Param("Periods", 100, 10, 200, 1, 10 );
@@ -56,11 +37,18 @@ Periods = Param("Periods", 100, 10, 200, 1, 10 );
 PrevPrice = Ref(Price, -Periods); 
 RangeChange = (Price - PrevPrice) / PrevPrice * 100;
 
-MarketDirectionColor = IIf(RangeChange > 0 AND RangeChange <=4 , colorWhite, 
-                           IIf(RangeChange > 4 AND RangeChange < 15, colorDarkGreen, 
-                               IIf(RangeChange > 15, colorGreen, 
-                                   IIf(RangeChange <= 0 AND RangeChange > -13, colorDarkRed, colorRed))));
-Plot(RangeChange, "MarketDirection", MarketDirectionColor, styleDashed|styleLine|styleNoLabel|styleNoTitle,0,10);
+MN = ParamColor( "Neutral", colorCycle );
+MB = ParamColor( "Bull", colorCycle );
+MSB = ParamColor( "Strong Bull", colorCycle );
+MBR = ParamColor( "Bear", colorCycle );
+MSBR = ParamColor( "Strong Bear", colorCycle );
+
+MarketDirectionColor = IIf(RangeChange > 0 AND RangeChange <=4 , MN, // Neutral
+                           IIf(RangeChange > 4 AND RangeChange < 15, MB, // Bull
+                               IIf(RangeChange > 15, MSB, // Strong Bull
+                                   IIf(RangeChange <= 0 AND RangeChange > -13, MBR, MSBR)))); // Bear / Strong Bear
+
+Plot(RangeChange, "MarketDirection", MarketDirectionColor, ParamStyle("Direction Style"),0,10);
 
 _SECTION_END();
 
@@ -72,10 +60,6 @@ AddColumn( O, "Open");
 AddColumn( C, "Close"); 
 AddColumn( H, "High"); 
 AddColumn( L, "Low"); 
-//AddColumn( PrevWH, "WeeklyHigh"); 
-//AddColumn( PrevWL, "WeeklyLow"); 
-//AddColumn( PrevWC, "WeeklyClose"); 
 AddColumn( WeeklyVolatility, "WeeklyVolatility"); 
-//AddColumn( WeeklyVolatilityMean, "WeeklyVolatilityMean"); 
 AddColumn( MarketType, "MarketType");
 AddColumn( RangeChange, "RangeChange (" + Periods + ")");
