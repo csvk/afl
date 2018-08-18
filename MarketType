@@ -32,21 +32,61 @@ Plot(WeeklyVolatility, "WeeklyVolatility", MarketTypeColor, ParamStyle("Volatili
 
 
 Price = ParamField("Price field", 3);
-Periods = Param("Periods", 100, 10, 200, 1, 10 );
+//Periods = Param("Periods", 100, 10, 200, 1, 10 );
+Periods = StrToNum(ParamList("Periods", "20|60|100|200"));
 
 PrevPrice = Ref(Price, -Periods); 
 RangeChange = (Price - PrevPrice) / PrevPrice * 100;
 
-MN = ParamColor( "Neutral", colorCycle );
+RangeChange20_Mean = 1;
+RangeChange60_Mean = 3;
+RangeChange100_Mean = 5.5;
+RangeChange200_Mean = 11.5;
+RangeChange20_Std = 7;
+RangeChange60_Std = 12.5;
+RangeChange100_Std = 17;
+RangeChange200_Std = 25;
+
+if (Periods == 20) {
+	RCMean = RangeChange20_Mean;
+	RCStd = RangeChange20_Std;
+}
+else {
+	if (Periods == 60) {
+		RCMean = RangeChange60_Mean;
+		RCStd = RangeChange60_Std;
+	}
+	else {
+			if (Periods == 100) {
+				RCMean = RangeChange100_Mean;
+				RCStd = RangeChange100_Std;
+			}
+			else {
+				RCMean = RangeChange200_Mean;
+				RCStd = RangeChange200_Std;
+			}
+	}
+}
+
+//MarketDirection = 1 "Strong Bull", 2 "Bull", 3 "Neutral High", 4 "Neutral Low", 5 "Bear", 6 "Strong Bear"
+MarketDirection = IIf(RangeChange < RCMean - RCStd * 1.5, 6, // Strong Bear
+                               IIf(RangeChange >= RCMean - RCStd * 1.5 AND RangeChange <= 0, 5, // Bear
+                                   IIf(RangeChange > 0 AND RangeChange < RCMean + RCStd * 0.5, 4, // Neutral Low
+									   IIf(RangeChange >= RCMean + RCStd * 0.5 AND RangeChange < RCMean + RCStd, 3, // Neutral High
+										   IIf(RangeChange >= RCMean + RCStd AND RangeChange < RCMean + RCStd * 3, 2, 1))))); // Bull / Strong Bull
+                           
+MNL = ParamColor( "Neutral Low", colorCycle );
+MNH = ParamColor( "Neutral High", colorCycle );
 MB = ParamColor( "Bull", colorCycle );
 MSB = ParamColor( "Strong Bull", colorCycle );
 MBR = ParamColor( "Bear", colorCycle );
 MSBR = ParamColor( "Strong Bear", colorCycle );
 
-MarketDirectionColor = IIf(RangeChange > 0 AND RangeChange <=4 , MN, // Neutral
-                           IIf(RangeChange > 4 AND RangeChange < 15, MB, // Bull
-                               IIf(RangeChange > 15, MSB, // Strong Bull
-                                   IIf(RangeChange <= 0 AND RangeChange > -13, MBR, MSBR)))); // Bear / Strong Bear
+MarketDirectionColor = IIf(RangeChange < RCMean - RCStd * 1.5, MSBR, // Strong Bear
+                               IIf(RangeChange >= RCMean - RCStd * 1.5 AND RangeChange <= 0, MBR, // Bear
+                                   IIf(RangeChange > 0 AND RangeChange < RCMean + RCStd * 0.5, MNL, // Neutral Low
+									   IIf(RangeChange >= RCMean + RCStd * 0.5 AND RangeChange < RCMean + RCStd, MNH, // Neutral High
+										   IIf(RangeChange >= RCMean + RCStd AND RangeChange < RCMean + RCStd * 3, MB, MSB))))); // Bull / Strong Bull
 
 Plot(RangeChange, "MarketDirection", MarketDirectionColor, ParamStyle("Direction Style"),0,10);
 
@@ -63,3 +103,4 @@ AddColumn( L, "Low");
 AddColumn( WeeklyVolatility, "WeeklyVolatility"); 
 AddColumn( MarketType, "MarketType");
 AddColumn( RangeChange, "RangeChange (" + Periods + ")");
+AddColumn( MarketDirection, "MarketDirection (" + Periods + ")");
